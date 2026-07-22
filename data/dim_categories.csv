@@ -1,0 +1,7 @@
+category_name,price_tier,avg_margin_pct
+staples,standard,8
+snacks,standard,12
+dairy,standard,10
+organic_produce,premium,22
+imported_gourmet,premium,28
+premium_meat_seafood,premium,26

@@ -1,0 +1,4 @@
+Option,Reach (users/quarter),Impact (0.25/0.5/1/2/3),Confidence (%),Effort (person-months),RICE Score
+B: Dedicated premium tab (all users),5731,1,50,4.0,716.0
+A: Personalized rail (top-decile segment only),574,2,80,1.5,612.0
+C: Standalone premium surface/app,859,3,30,9.0,86.0
