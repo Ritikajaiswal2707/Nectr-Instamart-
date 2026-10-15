@@ -14,10 +14,6 @@ How should Instamart introduce Nectr, its premium grocery proposition: through t
 
 
 
-\## What We Found
-
-
-
 We built a synthetic dataset of 6,000 users and 24,834 cleaned orders to explore first-time Nectr purchase prediction.
 
 
@@ -40,7 +36,7 @@ The analysis excluded users with prior Nectr purchases and used historical shopp
 
 
 
-Logistic Regression slightly outperformed Random Forest on overall held-out metrics (ROC-AUC 0.617 versus 0.613). However, Random Forest produced a higher purchase concentration in the highest-scored decile (6.90% versus the 2.97% test-set baseline). The dashboard uses Random Forest scores for ranking, while Logistic Regression remains the slightly stronger overall predictive baseline. Both models show modest predictive performance, and the top-decile result is a preliminary ranking signal—not evidence of causal lift or production readiness.
+Logistic Regression performed slightly better than Random Forest on overall held-out metrics (ROC-AUC 0.617 versus 0.613; average precision 0.0476 versus 0.0456). Both models achieved the same top-decile conversion of 6.90% in the current test split. These results suggest a preliminary ranking signal, not causal lift or production-ready targeting performance.
 
 
 
@@ -60,25 +56,11 @@ A rail is a smaller, more reversible product hypothesis that can be tested withi
 
 
 
-The initial RICE comparison favours a dedicated tab under its illustrative assumptions (716 versus 612 for the rail). We would still test the rail first because the relative effort and risk of the options should be validated with stakeholders, and a controlled experiment can establish whether targeted discovery generates incremental purchases.
+The initial RICE comparison favours a dedicated tab under its illustrative assumptions (716 versus 612 for the rail). We would still test the rail first because it offers a smaller, more reversible intervention. The relative effort, feasibility, and risks should be validated with stakeholders before implementation.
 
 
 
 This is a sequencing decision, not a claim that the rail is the highest-scoring option or that the model has demonstrated causal impact. The next step is to validate feasibility and test the rail against the existing experience using a properly powered randomized experiment.
-
-\## The Decision
-
-
-
-\*\*Test a personalized “Premium for You” rail before committing to a dedicated tab or standalone app.\*\*
-
-
-
-A rail is a smaller, more reversible product hypothesis that can be tested within the existing shopping experience. The recommendation is based on the value of learning before making a larger investment—not on proof that the rail will perform better.
-
-
-
-The initial RICE comparison favours a dedicated tab under its illustrative assumptions (716 versus 612 for the rail). We would still test the rail first because the relative effort and risk of the options should be validated with stakeholders, and a controlled experiment can establish whether targeted discovery generates incremental purchases.
 
 
 
@@ -88,7 +70,7 @@ The initial RICE comparison favours a dedicated tab under its illustrative assum
 
 1\. \*\*Validate feasibility:\*\* Confirm eligibility rules, instrumentation, and the availability of reliable first-time purchase data.
 
-2\. \*\*Prepare the experiment:\*\* Randomize eligible users into treatment (rail) and control (existing experience). Calculate sample size and recruitment duration using real baseline conversion, traffic, and a commercially meaningful minimum detectable effect.
+2\. \*\*Prepare the experiment:\*\* Randomize eligible users into treatment (rail) and control (existing experience). Calculate sample size and experiment duration using a real baseline conversion rate, traffic availability, and a commercially meaningful minimum detectable effect.
 
 3\. \*\*Measure impact:\*\* Use the treatment-control difference in first-time Nectr purchase rate over a predefined 30-day outcome window as the primary metric. Monitor overall order conversion, cancellations, average order value, and app performance as guardrails.
 
@@ -108,7 +90,7 @@ The initial RICE comparison favours a dedicated tab under its illustrative assum
 
 \- The clusters describe synthetic shopping patterns, not validated customer personas.
 
-\- RICE scores and execution timelines are planning assumptions, not measured business outcomes or confirmed delivery commitments.
+\- RICE scores are illustrative planning assumptions, not measured business outcomes.
 
 
 
