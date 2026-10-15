@@ -1,7 +1,7 @@
 # Instamart × Nectr — Product Requirements Document
 
-**Project type:** Product Management + Applied ML
-**Status:** Discovery and experiment design
+**Project type:** Product Management + Applied ML  
+**Status:** Discovery and experiment design  
 **Data status:** Synthetic portfolio dataset; findings require real-world validation.
 
 ## 1. Objective
@@ -76,6 +76,8 @@ Formula:
 
 The illustrative scores favour Option B, while the recommended sequence starts with Option A.
 
+The reach values are illustrative planning inputs, not observed eligible-user counts or validated forecasts. The scoring horizon and reach definition should be standardized across options before using these scores to make an investment decision.
+
 This is a deliberate difference between prioritization and execution. RICE helps compare options under stated assumptions; it does not establish which option will deliver the highest incremental revenue. The initial confidence inputs are hypotheses and should not be interpreted as statistically measured confidence.
 
 Option A is preferred for initial validation because it is a smaller, more reversible test. Its actual effort and reach must be confirmed with engineering and product stakeholders before implementation.
@@ -89,6 +91,7 @@ For a production pilot:
 - Exclude users with a recorded prior Nectr purchase.
 - Calculate behavioural features using only data available before the scoring date.
 - Rank eligible users using a model trained on historical data.
+- Before production use, compare model-based ranking with a simple baseline targeting strategy and validate performance on appropriately governed real data. Do not deploy the synthetic-data model directly to target actual customers.
 - Evaluate whether the model provides sufficient targeting value to justify personalization.
 - Define eligibility, exposure, and exclusion rules before randomization.
 
@@ -151,6 +154,8 @@ Randomize eligible users into two groups:
 - **Control:** Existing experience without the new rail.
 
 Randomization should be at the user level, with stable assignment throughout the experiment. Both groups should be drawn from the same eligible population.
+
+The primary analysis will follow an **intention-to-treat approach**: users are analyzed in the group to which they were originally assigned, regardless of rail exposure or engagement. Eligibility and exclusions must be defined before randomization, and any post-assignment exclusions must be documented in advance.
 
 ### Metrics
 
@@ -316,7 +321,7 @@ The model informs a targeting hypothesis; it does not replace product judgment o
 - [x] Targeting hypothesis quantified and limitations documented
 - [x] PRD updated to use first-time Nectr purchase as the primary outcome
 - [x] Experiment and guardrail framework specified
-- [x] Generate dashboard from the current held-out model scores
-- [ ] Review and finalize executive summary
+- [x] Generate and validate dashboard from the current held-out model scores
+- [x] Review and finalize executive summary
 - [ ] Validate product assumptions against real data, if available
 - [ ] Confirm feasibility and calculate experiment sample size
