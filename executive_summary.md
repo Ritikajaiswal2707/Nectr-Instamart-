@@ -1,30 +1,93 @@
-# Instamart Nectr — Executive Summary
+\# Instamart × Nectr — Executive Summary
 
-## The Question
-Should Instamart's premium grocery line (Nectr) integrate into the existing app, get its own tab, or become a standalone surface — and who should see it first?
 
-## What We Found
-Not all Instamart users are equally likely to buy premium groceries. Using purchase history (order frequency, average order value, and past premium purchases), we built a model that identifies the 10% of users most likely to buy premium in the next 30 days. That segment converts to premium purchases at **2.8x the rate of the average user** (30.5% vs. 11.0%).
 
-Three user personas emerged from the data:
-- **Value Shoppers (58%)** — frequent, low-spend, almost never buy premium
-- **Occasional Premium Explorers (27%)** — moderate spenders who dabble in premium
-- **Premium Explorers/Health-Conscious (15%)** — high AOV, consistently choose organic/imported — the closest match to a FirstClub-style buyer
+\## The Question
 
-## The Decision
-Launch a personalized "Premium for You" rail — visible only to the top 10% propensity segment — rather than a broad tab or a separate app.
 
-**This overrides the raw RICE prioritization score**, which technically favored a dedicated tab shown to all users (716 vs. 612). We recommend against following that number as-is: a tab shown broadly mostly reaches Value Shoppers, who show almost no premium interest (~2% of their purchases), and testing it broadly before validating anything carries real brand-dilution risk with no real data yet to justify it. The targeted rail costs less (1.5 months vs. 4), carries higher confidence because it's grounded in an actual measured number rather than an assumption, and produces real evidence to justify a broader rollout later — if it's warranted.
 
-## What Happens Next
-1. **Month 1:** A/B test the rail against a control group within the top-decile segment (287 users each side); track premium conversion as the success metric, and core order completion + session time as guardrails against cannibalization and slowdown.
-2. **Month 2:** If it works, begin a distinct visual/brand treatment to address Design's concern that premium blends too much into Instamart's fast-and-cheap visual identity.
-3. **Month 3:** Use real conversion data — not assumptions — to decide whether to expand toward a broader surface.
+How should Instamart introduce Nectr, its premium grocery proposition: through the existing app, a dedicated tab, or a standalone experience? And can historical shopping behaviour help prioritize first-time buyers?
 
-## What We're Being Upfront About
-- The clustering technically produced 4 segments, but two came out nearly identical — realistically, this is 3 meaningful personas, not 4. Richer real-world data would likely separate them further.
-- The propensity model's predictive strength is modest (ROC-AUC ~0.59) given only 5 behavioral signals were available in this synthetic dataset — a production model with real search and session data would likely perform meaningfully better.
-- This entire analysis runs on a synthetic dataset built to simulate realistic behavior, not actual Instamart data.
 
-## The One-Line Takeaway
-Don't guess who wants premium groceries — the data already shows a specific 10% of users convert at nearly 3x the average rate. Reach them first, prove it works, then decide whether to go broader.
+
+\## What We Found
+
+
+
+We built a synthetic dataset of 6,000 users and 24,834 cleaned orders to explore first-time Nectr purchase prediction.
+
+
+
+The analysis excluded users with prior Nectr purchases and used historical shopping behaviour to predict first-time purchases in a subsequent 30-day window.
+
+
+
+\- \*\*Eligible first-purchase cohort:\*\* 5,793 users
+
+\- \*\*Future first-time Nectr buyers:\*\* 172
+
+\- \*\*Simulated 30-day purchase rate:\*\* 2.97%
+
+\- \*\*Held-out test set:\*\* 1,449 users
+
+\- \*\*Highest-scored decile conversion:\*\* 6.90%, compared with a 2.97% test-set baseline
+
+\- \*\*Top-decile concentration:\*\* 2.32× the baseline rate in one synthetic test split
+
+
+
+Logistic Regression slightly outperformed Random Forest on the reported held-out metrics (ROC-AUC 0.617 versus 0.613). Predictive performance is modest, so the model should be treated as an exploratory baseline rather than a production-ready targeting system.
+
+
+
+\## The Decision
+
+
+
+\*\*Test a personalized “Premium for You” rail before committing to a dedicated tab or standalone app.\*\*
+
+
+
+A rail is a smaller, more reversible product hypothesis that can be tested within the existing shopping experience. The recommendation is based on the value of learning before making a larger investment—not on proof that the rail will perform better.
+
+
+
+The initial RICE comparison favours a dedicated tab under its illustrative assumptions (716 versus 612 for the rail). We would still test the rail first because the relative effort and risk of the options should be validated with stakeholders, and a controlled experiment can establish whether targeted discovery generates incremental purchases.
+
+
+
+\## What Happens Next
+
+
+
+1\. \*\*Validate feasibility:\*\* Confirm eligibility rules, instrumentation, and the availability of reliable first-time purchase data.
+
+2\. \*\*Prepare the experiment:\*\* Randomize eligible users into treatment (rail) and control (existing experience). Calculate sample size and recruitment duration using real baseline conversion, traffic, and a commercially meaningful minimum detectable effect.
+
+3\. \*\*Measure impact:\*\* Use the treatment-control difference in first-time Nectr purchase rate over a predefined 30-day outcome window as the primary metric. Monitor overall order conversion, cancellations, average order value, and app performance as guardrails.
+
+4\. \*\*Make the rollout decision:\*\* Expand only if results provide credible evidence of incremental improvement without unacceptable guardrail deterioration.
+
+
+
+\## What We're Being Upfront About
+
+
+
+\- All data, customer behaviour, and outcomes in this project are synthetic—not actual Instamart or Nectr results.
+
+\- The 2.32× concentration is an observed ranking result in one held-out synthetic split. It is not causal lift and does not establish that the rail will increase purchases.
+
+\- Model discrimination is modest, and the small difference between Logistic Regression and Random Forest should not be overstated.
+
+\- The clusters describe synthetic shopping patterns, not validated customer personas.
+
+\- RICE scores and execution timelines are planning assumptions, not measured business outcomes or confirmed delivery commitments.
+
+
+
+\## The One-Line Takeaway
+
+
+
+\*\*Use synthetic analysis to form a targeting hypothesis, then use a properly powered randomized experiment with real product data to establish whether targeted Nectr discovery drives incremental first-time purchases.\*\*

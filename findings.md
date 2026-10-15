@@ -1,47 +1,105 @@
-# Instamart Nectr — Clustering & Propensity Findings
+# Nectr × Instamart: First-Time Purchase Acquisition Analysis
 
-## Dataset
-6,000 synthetic users, 5,731 with order history. Premium adoption defined on a held-out future 30-day window (no leakage — features built only from prior history).
+> **Data disclosure:** This project uses synthetic data generated for portfolio analysis. All customer behaviour, orders, conversion rates, model metrics, and business implications are simulated. They are not actual Instamart or Nectr results.
 
-## Clustering (K-means, k=4)
+## 1. Product question
 
-| Cluster | Users | Avg Orders | Avg Order Value | Premium Item Share | Persona |
-|---|---|---|---|---|---|
-| 0 | 1,848 | 2.74 | ₹416 | 3% | Value Shopper |
-| 1 | 836 | 3.18 | ₹1,143 | 46% | **Premium Explorer / Health-Conscious** |
-| 2 | 1,566 | 5.98 | ₹572 | 14% | Occasional Premium Explorer |
-| 3 | 1,481 | 2.50 | ₹412 | 2% | Value Shopper |
+How might Instamart identify eligible customers who are more likely to make their first Nectr purchase, and how should the team test a targeted discovery experience?
 
-**Silhouette score at k=4: 0.315** (k=2 actually scores higher at 0.359, but collapses to just "premium vs. not," which is too coarse to act on — 4 personas is the better trade-off between statistical cleanliness and product usefulness).
+The analysis explores historical shopping behaviour as a potential targeting signal. It does not establish that targeting causes incremental purchases.
 
-## One honest limitation — clusters 0 and 3 aren't really distinct
+## 2. Dataset and methodology
 
-Both got labeled "Value Shopper" by the labeling logic — their order count, order value, and premium share are nearly identical (2.74 vs 2.50 orders; ₹416 vs ₹412 AOV). This is the exact limitation flagged in the original spec ("K-means becomes difficult to interpret meaningfully beyond a certain point") — it just showed up at k=4 itself, not beyond it. With richer real behavioral data (session recordings, search queries), these two would likely separate on a dimension this synthetic dataset can't simulate. **Practical read: treat this as effectively 3 meaningful personas, not 4** — Value Shopper, Occasional Premium Explorer, Premium Explorer/Health-Conscious.
+The synthetic dataset contains 6,000 users and 24,834 cleaned orders.
 
-## Propensity Model
+| Dataset measure | Result |
+|---|---:|
+| Synthetic users | 6,000 |
+| Cleaned orders | 24,834 |
+| Historical orders used for features | 13,412 |
+| Future-window orders | 11,422 |
+| Users with a prior Nectr purchase | 207 |
+| Eligible first-purchase cohort | 5,793 |
+| Future first-time Nectr buyers | 172 |
+| Future-window conversion among eligible users | 2.97% |
 
-| Model | Precision | Recall | ROC-AUC |
-|---|---|---|---|
-| Logistic Regression | 0.141 | 0.563 | 0.594 |
-| Random Forest | 0.162 | 0.405 | 0.588 |
+The analysis separates historical behaviour from a subsequent 30-day outcome window. Users with a prior Nectr purchase are excluded from the first-purchase acquisition cohort.
 
-Both models are modest (ROC-AUC ~0.59) — honestly reflects that only 5 behavioral features are available in this synthetic dataset. A real deployment would add search queries, category dwell time, and push-notification response, which would likely lift this meaningfully.
+Features are derived from historical orders, including order frequency, average order value, premium-item share, total items, evening-order share, and tier-1 location status.
 
-**Top feature by importance:** `avg_order_value` (0.36), followed by `premium_item_share` (0.22) — consistent with intuition: past spend and past premium behavior are the strongest predictors of future premium behavior.
+## 3. Predictive model comparison
 
-## The headline number (resume bullet material)
+Logistic Regression and Random Forest were evaluated on a held-out test set.
 
-- **Overall premium adoption rate:** 11.0% of active users
-- **Premium adoption rate in the top 10% propensity segment:** 30.5%
-- **Concentration: 2.8x** — the model concentrates premium buyers into a segment nearly 3x denser than the base rate, using less than a third of the recall a production system would ideally want, which itself is an honest caveat on how confidently to act on this number yet
+| Metric | Logistic Regression | Random Forest |
+|---|---:|---:|
+| ROC-AUC | 0.617 | 0.613 |
+| Average precision | 0.0476 | 0.0456 |
+| Precision at 0.5 threshold | 4.34% | 4.21% |
+| Recall at 0.5 threshold | 53.5% | 46.5% |
 
-## What this means for the product decision
+Logistic Regression performs slightly better across the reported metrics and is the simpler model to interpret. However, both models show modest discrimination, and precision at the default 0.5 threshold is low.
 
-Targeting the top-decile segment (574 users, 10% of the active base) for the "Premium for You" rail means Instamart could reach roughly 3x the premium-buyer density of a random/blanket rollout — directly supporting the earlier recommendation to launch the personalized rail to a targeted segment first, rather than showing it to everyone.
+**Decision:** Carry Logistic Regression forward as an exploratory baseline. Do not position either model as production-ready or claim that it reliably identifies individual buyers.
 
-## Status
-- [x] Synthetic dataset generated and corrected (premium-order rate fixed from unrealistic 78% to realistic 17%)
-- [x] K-means clustering run, k=4 selected with honest limitation noted
-- [x] Propensity model built (Logistic Regression + Random Forest)
-- [x] Headline number established: 2.8x concentration in top-decile segment
-- [ ] Next: RICE scoring with real numbers, PRD, dashboard
+## 4. Top-decile targeting hypothesis
+
+The held-out test set contains 1,449 eligible users.
+
+| Measure | Result |
+|---|---:|
+| Test-set baseline conversion | 2.97% |
+| Conversion among highest-scored decile | 6.90% |
+| Top-decile concentration versus baseline | 2.32× |
+| Users in the top decile | 145 |
+
+The highest-scored decile has a higher observed first-time purchase rate than the overall held-out test cohort.
+
+This is a **ranking signal in one synthetic test split**, not evidence of incremental impact. It does not establish that a personalized rail, recommendation, or promotion will cause additional Nectr purchases. The result may also vary across random splits and synthetic-data assumptions.
+
+## 5. Descriptive customer segments
+
+A four-cluster K-Means analysis of historical shopping behaviour produced the following descriptive groups:
+
+| Cluster | Users | Average orders | Average order value | Premium-item share |
+|---|---:|---:|---:|---:|
+| 0 | 1,243 | 5.30 | ₹542 | 11.4% |
+| 1 | 604 | 2.67 | ₹1,223 | 50.0% |
+| 2 | 1,053 | 2.02 | ₹412 | 3.0% |
+| 3 | 1,491 | 2.07 | ₹411 | 2.3% |
+
+These clusters describe shopping patterns in the synthetic dataset. They should not be interpreted as validated customer personas or proof of Nectr affinity. Clusters 2 and 3 appear similar on the displayed measures.
+
+## 6. Product implications
+
+1. **Test targeted discovery before building a dedicated destination.** A personalized rail is a reasonable low-cost hypothesis to validate, not a proven winner.
+2. **Use first-time Nectr purchase as the primary outcome.** Add-to-cart and click-through rates can diagnose the funnel, but do not establish purchase conversion.
+3. **Evaluate incrementality with a control group.** Compare eligible users randomly assigned to treatment and control.
+4. **Monitor guardrails.** Track overall order conversion, cancellations, average order value, and user experience to detect potential harm to core shopping.
+5. **Avoid over-personalization claims.** The model is exploratory and the underlying data is synthetic.
+
+## 7. Proposed experiment
+
+Randomly assign eligible users who have never purchased Nectr to a treatment group receiving a targeted Nectr discovery rail and a control group receiving the existing experience.
+
+- **Primary metric:** Difference in first-time Nectr purchase rate between treatment and control over a predefined 30-day window.
+- **Secondary metrics:** Nectr product-page visits, add-to-cart rate, and checkout completion.
+- **Guardrails:** Overall Instamart order conversion, cancellations, average order value, and customer complaints.
+- **Analysis:** Report treatment and control rates, absolute percentage-point lift, relative lift, confidence intervals, and sample size.
+- **Decision rule:** Scale only if the experiment shows a credible incremental improvement without unacceptable guardrail deterioration.
+
+The required sample size and experiment duration must be determined using the real baseline conversion, minimum detectable effect, and traffic availability. The synthetic dataset is not sufficient to establish these values.
+
+## 8. Limitations
+
+- All data is synthetic; the findings are not evidence of actual customer behaviour.
+- The results come from one train/test split and may vary with other splits or assumptions.
+- Model performance is modest, particularly at the default classification threshold.
+- The top-decile comparison is observational within the held-out synthetic cohort, not a randomized experiment.
+- The analysis does not establish the effectiveness of any specific interface, promotion, or recommendation strategy.
+
+## Conclusion
+
+The analysis demonstrates an end-to-end approach to defining a first-purchase cohort, constructing historical behavioural features, comparing simple predictive models, and developing a testable product hypothesis.
+
+The next meaningful validation step is a controlled experiment using real, appropriately governed product data—not deployment of the model based on these synthetic results.
