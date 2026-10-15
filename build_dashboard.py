@@ -1,113 +1,354 @@
+
 """
-Instamart Nectr — Dashboard Visualizations
-Builds the key charts a Power BI dashboard would show, using the real
-clustering/propensity results. Saved as PNGs since Power BI itself isn't
-available in this environment — these are the exact charts to recreate
-there if uploading the underlying CSVs.
+Nectr x Instamart — First-Time Purchase Acquisition Dashboard
+
+All underlying data and results are synthetic.
+Outputs dashboard.png in the repository root.
 """
+
+from pathlib import Path
+import math
 
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
 
+# ---------------------------------------------------------------------
+# PATHS AND INPUTS
+# ---------------------------------------------------------------------
+
+BASE_DIR = Path(__file__).resolve().parent
+DATA_DIR = BASE_DIR / "data"
+OUTPUT_PATH = BASE_DIR / "dashboard.png"
+
+SCORES_PATH = DATA_DIR / "heldout_first_nectr_scores.csv"
+METRICS_PATH = DATA_DIR / "first_nectr_model_metrics.csv"
+CLUSTERS_PATH = DATA_DIR / "cluster_summary.csv"
+
+for path in [SCORES_PATH, METRICS_PATH, CLUSTERS_PATH]:
+    if not path.exists():
+        raise FileNotFoundError(
+            f"Required input file not found: {path}\n"
+            "Run generate_data.py and clustering_and_propensity.py first."
+        )
+
+scores = pd.read_csv(SCORES_PATH)
+metrics = pd.read_csv(METRICS_PATH)
+clusters = pd.read_csv(CLUSTERS_PATH)
+
+required_score_columns = {
+    "user_id",
+    "actual_first_nectr_purchase",
+    "propensity_score",
+    "score_rank",
+}
+if not required_score_columns.issubset(scores.columns):
+    missing = required_score_columns - set(scores.columns)
+    raise ValueError(f"Missing score columns: {sorted(missing)}")
+
+required_metric_columns = {
+    "model",
+    "roc_auc",
+    "average_precision",
+}
+if not required_metric_columns.issubset(metrics.columns):
+    missing = required_metric_columns - set(metrics.columns)
+    raise ValueError(f"Missing model metric columns: {sorted(missing)}")
+
+required_cluster_columns = {
+    "cluster",
+    "users",
+    "avg_order_value",
+    "avg_premium_item_share",
+}
+if not required_cluster_columns.issubset(clusters.columns):
+    missing = required_cluster_columns - set(clusters.columns)
+    raise ValueError(f"Missing cluster columns: {sorted(missing)}")
+
+if scores.empty:
+    raise ValueError("Held-out scores file is empty.")
+
+if not scores["actual_first_nectr_purchase"].isin([0, 1]).all():
+    raise ValueError("Purchase outcome must contain only 0 and 1.")
+
+# ---------------------------------------------------------------------
+# VISUAL STYLE
+# ---------------------------------------------------------------------
+
 plt.rcParams["font.family"] = "sans-serif"
 plt.rcParams["axes.spines.top"] = False
 plt.rcParams["axes.spines.right"] = False
 
-df = pd.read_csv("/home/claude/instamart/data/user_segments_with_propensity.csv")
-rice_df = pd.read_csv("/home/claude/instamart/data/rice_scoring.csv")
+PRIMARY = "#2F6F63"
+SECONDARY = "#C9A227"
+MUTED = "#9BA6A0"
+ACCENT = "#B5563C"
 
-COLOR_PRIMARY = "#2F6F63"
-COLOR_SECONDARY = "#C9A227"
-COLOR_MUTED = "#9BA6A0"
-COLOR_ACCENT = "#B5563C"
+# ---------------------------------------------------------------------
+# HELD-OUT COHORT METRICS
+# Use ceil so the top decile contains 145 of 1,449 users.
+# The same convention must be used when reporting these results.
+# ---------------------------------------------------------------------
 
-fig, axes = plt.subplots(2, 2, figsize=(13, 10))
-fig.suptitle("Instamart Nectr — Premium Targeting Dashboard", fontsize=16, fontweight="bold", y=0.98)
+baseline_rate = scores["actual_first_nectr_purchase"].mean()
 
-# ---------------------------------------------------------------------------
-# CHART 1: Persona distribution (merging the two Value Shopper clusters, per
-# the documented limitation)
-# ---------------------------------------------------------------------------
-persona_counts = df["persona_label"].value_counts()
-ax1 = axes[0, 0]
-colors1 = [COLOR_PRIMARY if "Premium" in p and "Occasional" not in p
-           else COLOR_SECONDARY if "Occasional" in p
-           else COLOR_MUTED for p in persona_counts.index]
-bars1 = ax1.barh(persona_counts.index, persona_counts.values, color=colors1)
-ax1.set_title("User Personas (n=5,731 active users)", fontweight="bold", fontsize=12)
-ax1.set_xlabel("Number of users")
-for bar, val in zip(bars1, persona_counts.values):
-    ax1.text(val + 50, bar.get_y() + bar.get_height()/2, f"{val:,} ({val/len(df):.0%})",
-             va="center", fontsize=9)
-ax1.set_xlim(0, max(persona_counts.values) * 1.25)
+top_decile_count = max(1, math.ceil(len(scores) * 0.10))
 
-# ---------------------------------------------------------------------------
-# CHART 2: Propensity concentration — the headline number
-# ---------------------------------------------------------------------------
-ax2 = axes[0, 1]
-top_decile_threshold = df["propensity_score"].quantile(0.90)
-top_decile = df[df["propensity_score"] >= top_decile_threshold]
-overall_rate = df["will_buy_premium_future"].mean()
-top_decile_rate = top_decile["will_buy_premium_future"].mean()
+# score_rank is already sorted from highest propensity to lowest.
+scores["top_decile"] = scores["score_rank"] <= top_decile_count
 
-bars2 = ax2.bar(
-    ["All Active Users\n(n=5,731)", "Top-Decile Propensity\nSegment (n=574)"],
-    [overall_rate * 100, top_decile_rate * 100],
-    color=[COLOR_MUTED, COLOR_PRIMARY],
-    width=0.5
+top_decile = scores.loc[scores["top_decile"]]
+top_decile_rate = top_decile["actual_first_nectr_purchase"].mean()
+
+lift = (
+    top_decile_rate / baseline_rate
+    if baseline_rate > 0
+    else 0
 )
-ax2.set_title("Premium Adoption Rate — 2.8x Concentration", fontweight="bold", fontsize=12)
-ax2.set_ylabel("% who buy premium (next 30 days)")
-ax2.yaxis.set_major_formatter(mticker.PercentFormatter())
-for bar, val in zip(bars2, [overall_rate * 100, top_decile_rate * 100]):
-    ax2.text(bar.get_x() + bar.get_width()/2, val + 1, f"{val:.1f}%",
-              ha="center", fontweight="bold", fontsize=11)
-ax2.set_ylim(0, max(overall_rate, top_decile_rate) * 100 * 1.3)
 
-# ---------------------------------------------------------------------------
-# CHART 3: Persona profile — AOV vs Premium Share (bubble = user count)
-# ---------------------------------------------------------------------------
-ax3 = axes[1, 0]
-profile = df.groupby("persona_label").agg(
-    avg_order_value=("avg_order_value", "mean"),
-    premium_share=("premium_item_share", "mean"),
-    n_users=("user_id", "count")
-).reset_index()
+# ---------------------------------------------------------------------
+# DASHBOARD CANVAS
+# ---------------------------------------------------------------------
 
-persona_colors = {"Value Shopper": COLOR_MUTED, "Occasional Premium Explorer": COLOR_SECONDARY,
-                   "Premium Explorer / Health-Conscious": COLOR_PRIMARY}
-for _, row in profile.iterrows():
-    ax3.scatter(row["avg_order_value"], row["premium_share"] * 100,
-                s=row["n_users"] / 2, alpha=0.7,
-                color=persona_colors.get(row["persona_label"], COLOR_ACCENT),
-                edgecolors="white", linewidth=1.5,
-                label=row["persona_label"])
-    ax3.annotate(row["persona_label"].split("/")[0].strip(),
-                 (row["avg_order_value"], row["premium_share"] * 100),
-                 xytext=(8, 8), textcoords="offset points", fontsize=8.5)
+fig, axes = plt.subplots(2, 2, figsize=(14, 10))
 
-ax3.set_title("Persona Profile: AOV vs. Premium Share\n(bubble size = user count)", fontweight="bold", fontsize=12)
-ax3.set_xlabel("Average Order Value (₹)")
-ax3.set_ylabel("Premium item share (%)")
+fig.suptitle(
+    "Nectr x Instamart — First-Time Purchase Acquisition",
+    fontsize=16,
+    fontweight="bold",
+    y=0.985,
+)
 
-# ---------------------------------------------------------------------------
-# CHART 4: RICE comparison — showing the override decision visually
-# ---------------------------------------------------------------------------
-ax4 = axes[1, 1]
-rice_sorted = rice_df.sort_values("RICE Score", ascending=True)
-option_labels = [o.split(":")[0] for o in rice_sorted["Option"]]
-bar_colors = [COLOR_PRIMARY if "A" in o else COLOR_MUTED for o in option_labels]
-bars4 = ax4.barh(option_labels, rice_sorted["RICE Score"], color=bar_colors)
-ax4.set_title("RICE Scores — Recommendation Overrides Raw Ranking", fontweight="bold", fontsize=12)
-ax4.set_xlabel("RICE Score")
-for bar, val in zip(bars4, rice_sorted["RICE Score"]):
-    ax4.text(val + 10, bar.get_y() + bar.get_height()/2, f"{val:.0f}", va="center", fontsize=9)
-ax4.text(0.98, 0.02, "Recommended: Option A\n(highest confidence, lowest risk)",
-          transform=ax4.transAxes, ha="right", va="bottom", fontsize=8.5,
-          style="italic", color=COLOR_PRIMARY,
-          bbox=dict(boxstyle="round", facecolor="white", edgecolor=COLOR_PRIMARY, alpha=0.9))
+fig.text(
+    0.5,
+    0.945,
+    "SYNTHETIC DATA — exploratory analysis, not actual business results",
+    ha="center",
+    fontsize=10,
+    color=ACCENT,
+)
 
-plt.tight_layout(rect=[0, 0, 1, 0.96])
-plt.savefig("/home/claude/instamart/dashboard.png", dpi=150, bbox_inches="tight")
-print("Saved dashboard.png")
+# ---------------------------------------------------------------------
+# CHART 1: FIRST-TIME PURCHASE CONVERSION
+# ---------------------------------------------------------------------
+
+ax = axes[0, 0]
+
+labels = [
+    f"All held-out users\n(n={len(scores):,})",
+    f"Top-scored decile\n(n={len(top_decile):,})",
+]
+
+values = [
+    baseline_rate * 100,
+    top_decile_rate * 100,
+]
+
+bars = ax.bar(
+    labels,
+    values,
+    color=[MUTED, PRIMARY],
+    width=0.55,
+)
+
+ax.set_title(
+    "First-Time Nectr Purchase Rate",
+    fontweight="bold",
+)
+ax.set_ylabel("Users purchasing in future window (%)")
+ax.yaxis.set_major_formatter(mticker.PercentFormatter())
+
+max_value = max(values) if values else 1
+ax.set_ylim(0, max_value * 1.35 if max_value > 0 else 1)
+
+for bar, value in zip(bars, values):
+    ax.text(
+        bar.get_x() + bar.get_width() / 2,
+        bar.get_height() + max_value * 0.04,
+        f"{value:.2f}%",
+        ha="center",
+        fontweight="bold",
+    )
+
+ax.text(
+    0.98,
+    0.95,
+    f"{lift:.2f}x concentration",
+    transform=ax.transAxes,
+    ha="right",
+    va="top",
+    color=PRIMARY,
+    fontweight="bold",
+)
+
+# ---------------------------------------------------------------------
+# CHART 2: HELD-OUT MODEL COMPARISON
+# ---------------------------------------------------------------------
+
+ax = axes[0, 1]
+
+metric_columns = ["roc_auc", "average_precision"]
+metric_labels = ["ROC-AUC", "Average precision"]
+
+x_positions = list(range(len(metric_columns)))
+bar_width = 0.34
+
+for i, (_, row) in enumerate(metrics.iterrows()):
+    values = [row[column] for column in metric_columns]
+
+    positions = [
+        position + (i - (len(metrics) - 1) / 2) * bar_width
+        for position in x_positions
+    ]
+
+    bars = ax.bar(
+        positions,
+        values,
+        bar_width,
+        label=row["model"],
+        color=PRIMARY if i == 0 else SECONDARY,
+    )
+
+    for bar, value in zip(bars, values):
+        ax.text(
+            bar.get_x() + bar.get_width() / 2,
+            bar.get_height() + 0.008,
+            f"{value:.3f}",
+            ha="center",
+            fontsize=8,
+        )
+
+ax.set_xticks(x_positions)
+ax.set_xticklabels(metric_labels)
+ax.set_ylim(
+    0,
+    max(float(metrics["roc_auc"].max()), 0.1) * 1.25,
+)
+ax.set_title("Held-Out Model Comparison", fontweight="bold")
+ax.legend(frameon=False, fontsize=8)
+
+ax.text(
+    0.02,
+    0.02,
+    "Modest predictive performance",
+    transform=ax.transAxes,
+    fontsize=8,
+    color=ACCENT,
+)
+
+# ---------------------------------------------------------------------
+# CHART 3: DESCRIPTIVE SHOPPING CLUSTERS
+# These are not validated customer personas.
+# ---------------------------------------------------------------------
+
+ax = axes[1, 0]
+
+ax.scatter(
+    clusters["avg_order_value"],
+    clusters["avg_premium_item_share"] * 100,
+    s=clusters["users"] / 2,
+    c=clusters["cluster"],
+    cmap="viridis",
+    alpha=0.8,
+    edgecolors="white",
+    linewidth=1.2,
+)
+
+for _, row in clusters.iterrows():
+    ax.annotate(
+        f"Cluster {int(row['cluster'])}\n"
+        f"n={int(row['users']):,}",
+        (
+            row["avg_order_value"],
+            row["avg_premium_item_share"] * 100,
+        ),
+        xytext=(6, 6),
+        textcoords="offset points",
+        fontsize=8,
+    )
+
+ax.set_title(
+    "Descriptive Shopping Clusters",
+    fontweight="bold",
+)
+ax.set_xlabel("Average order value (₹)")
+ax.set_ylabel("Premium-item share (%)")
+
+ax.text(
+    0.02,
+    0.02,
+    "Synthetic clusters; not validated personas",
+    transform=ax.transAxes,
+    fontsize=8,
+    color=ACCENT,
+)
+
+# ---------------------------------------------------------------------
+# CHART 4: ILLUSTRATIVE RICE COMPARISON
+# Scores are planning assumptions, not measured outcomes.
+# ---------------------------------------------------------------------
+
+ax = axes[1, 1]
+
+options = pd.DataFrame(
+    {
+        "option": [
+            "Personalized rail",
+            "Dedicated tab",
+            "Standalone app",
+        ],
+        "score": [612, 716, 86],
+    }
+).sort_values("score")
+
+bar_colors = [
+    PRIMARY if option == "Personalized rail" else MUTED
+    for option in options["option"]
+]
+
+bars = ax.barh(
+    options["option"],
+    options["score"],
+    color=bar_colors,
+)
+
+ax.set_title("Illustrative RICE Scores", fontweight="bold")
+ax.set_xlabel("Planning score (assumptions, not measured outcomes)")
+ax.set_xlim(0, options["score"].max() * 1.25)
+
+for bar, value in zip(bars, options["score"]):
+    ax.text(
+        value + 8,
+        bar.get_y() + bar.get_height() / 2,
+        f"{value:.0f}",
+        va="center",
+        fontsize=9,
+    )
+
+ax.text(
+    0.98,
+    0.04,
+    "Proposed first test: personalized rail\n"
+    "Smaller, reversible experiment",
+    transform=ax.transAxes,
+    ha="right",
+    va="bottom",
+    fontsize=8,
+    color=PRIMARY,
+)
+
+# ---------------------------------------------------------------------
+# SAVE OUTPUT
+# ---------------------------------------------------------------------
+
+plt.tight_layout(rect=[0, 0, 1, 0.92])
+fig.savefig(OUTPUT_PATH, dpi=160, bbox_inches="tight")
+plt.close(fig)
+
+print(f"Saved dashboard: {OUTPUT_PATH}")
+print("Synthetic-data disclaimer included.")
+print(f"Held-out users: {len(scores):,}")
+print(f"Top-decile users: {len(top_decile):,}")
+print(f"Held-out baseline: {baseline_rate:.2%}")
+print(f"Top-decile conversion: {top_decile_rate:.2%}")
+print(f"Top-decile concentration: {lift:.2f}x")
