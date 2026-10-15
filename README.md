@@ -1,4 +1,4 @@
-﻿# Nectr x Instamart: First-Time Purchase Acquisition
+# Nectr × Instamart: First-Time Purchase Acquisition
 
 **Project type:** Product Management + Applied ML  
 **Status:** Product discovery, synthetic-data analysis, and experiment design
@@ -45,7 +45,7 @@ The analysis is exploratory. The proposed product intervention must be evaluated
 | Held-out test users | 1,449 |
 | Held-out top-decile users | 145 |
 | Top-decile conversion | 6.90% |
-| Top-decile concentration vs. held-out baseline | 2.32Ã— |
+| Top-decile concentration vs. held-out baseline | 2.32× |
 
 The synthetic eligible cohort has a 2.97% first-purchase rate over the defined future window. In the held-out test set, the highest-scored decile has a 6.90% conversion rate, approximately 2.32 times the test-set baseline.
 
@@ -84,7 +84,7 @@ The RICE analysis uses illustrative assumptions for reach, impact, confidence, a
 
 Under the current assumptions, the dedicated tab scores higher on raw RICE, while the personalised rail is recommended as a smaller, more reversible first experiment, subject to engineering feasibility.
 
-This recommendation is a product hypothesisâ€”not a proven winner. The assumptions should be validated with stakeholders and real product data.
+This recommendation is a product hypothesis—not a proven winner. The assumptions should be validated with stakeholders and real product data.
 
 ## Proposed A/B Experiment
 
@@ -107,15 +107,15 @@ A positive result should be established through the experiment, not inferred fro
 
 ## Repository Contents
 
-- `generate_data.py` â€” Generates the synthetic dataset and analysis cohorts.
-- `clustering_and_propensity.py` â€” Builds historical features, evaluates propensity models, and produces cluster summaries.
-- `build_dashboard.py` â€” Generates the visual dashboard.
-- `rice_scoring.py` â€” Calculates illustrative RICE scores and reports model results.
-- `executive_summary.md` â€” Executive overview.
-- `findings.md` â€” Analytical findings and limitations.
-- `prd.md` â€” Product requirements and experiment proposal.
-- `dashboard.png` â€” Visual summary of the analysis.
-- `data/` â€” Generated datasets, model metrics, held-out scores, cluster summaries, and RICE outputs.
+- `generate_data.py` — Generates the synthetic dataset and analysis cohorts.
+- `clustering_and_propensity.py` — Builds historical features, evaluates propensity models, and produces cluster summaries.
+- `build_dashboard.py` — Generates the visual dashboard.
+- `rice_scoring.py` — Calculates illustrative RICE scores and reports model results.
+- `executive_summary.md` — Executive overview.
+- `findings.md` — Analytical findings and limitations.
+- `prd.md` — Product requirements and experiment proposal.
+- `dashboard.png` — Visual summary of the analysis.
+- `data/` — Generated datasets, model metrics, held-out scores, cluster summaries, and RICE outputs.
 
 ## Reproducibility
 
@@ -146,5 +146,4 @@ This project demonstrates a product analytics workflow: translate a discovery pr
 
 The central recommendation is to test targeted discovery as a reversible product hypothesis and measure incremental first-time purchases before committing to a larger product surface.
 
-**The results are synthetic and should be presented as a demonstration of analytical and product decision-makingâ€”not as evidence of actual Instamart performance.**
-
+**The results are synthetic and should be presented as a demonstration of analytical and product decision-making—not as evidence of actual Instamart performance.**
