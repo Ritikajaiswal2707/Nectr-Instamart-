@@ -86,31 +86,20 @@ ACCENT = "#B5563C"
 
 # ---------------------------------------------------------------------
 # HELD-OUT COHORT METRICS
-# Use ceil so the top decile contains 145 of 1,449 users.
-# The same convention must be used when reporting these results.
 # ---------------------------------------------------------------------
 
 baseline_rate = scores["actual_first_nectr_purchase"].mean()
-
 top_decile_count = max(1, math.ceil(len(scores) * 0.10))
-
-# score_rank is already sorted from highest propensity to lowest.
 scores["top_decile"] = scores["score_rank"] <= top_decile_count
-
 top_decile = scores.loc[scores["top_decile"]]
 top_decile_rate = top_decile["actual_first_nectr_purchase"].mean()
-
-lift = (
-    top_decile_rate / baseline_rate
-    if baseline_rate > 0
-    else 0
-)
+lift = top_decile_rate / baseline_rate if baseline_rate > 0 else 0
 
 # ---------------------------------------------------------------------
 # DASHBOARD CANVAS
 # ---------------------------------------------------------------------
 
-fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+fig, axes = plt.subplots(2, 2, figsize=(15, 10.5))
 
 fig.suptitle(
     "Nectr x Instamart — First-Time Purchase Acquisition",
@@ -121,7 +110,7 @@ fig.suptitle(
 
 fig.text(
     0.5,
-    0.945,
+    0.952,
     "SYNTHETIC DATA — exploratory analysis, not actual business results",
     ha="center",
     fontsize=10,
@@ -138,23 +127,10 @@ labels = [
     f"All held-out users\n(n={len(scores):,})",
     f"Top-scored decile\n(n={len(top_decile):,})",
 ]
+values = [baseline_rate * 100, top_decile_rate * 100]
 
-values = [
-    baseline_rate * 100,
-    top_decile_rate * 100,
-]
-
-bars = ax.bar(
-    labels,
-    values,
-    color=[MUTED, PRIMARY],
-    width=0.55,
-)
-
-ax.set_title(
-    "First-Time Nectr Purchase Rate",
-    fontweight="bold",
-)
+bars = ax.bar(labels, values, color=[MUTED, PRIMARY], width=0.55)
+ax.set_title("First-Time Nectr Purchase Rate", fontweight="bold")
 ax.set_ylabel("Users purchasing in future window (%)")
 ax.yaxis.set_major_formatter(mticker.PercentFormatter())
 
@@ -182,63 +158,93 @@ ax.text(
 )
 
 # ---------------------------------------------------------------------
-# CHART 2: HELD-OUT MODEL COMPARISON
+# CHART 2: MODEL COMPARISON
+# Separate panels keep average-precision values readable.
 # ---------------------------------------------------------------------
 
-ax = axes[0, 1]
+model_grid = axes[0, 1].get_subplotspec().subgridspec(1, 2, wspace=0.38)
+axes[0, 1].remove()
 
-metric_columns = ["roc_auc", "average_precision"]
-metric_labels = ["ROC-AUC", "Average precision"]
+ax_auc = fig.add_subplot(model_grid[0, 0])
+ax_ap = fig.add_subplot(model_grid[0, 1])
 
-x_positions = list(range(len(metric_columns)))
-bar_width = 0.34
+model_colors = {
+    "Logistic Regression": PRIMARY,
+    "Random Forest": SECONDARY,
+}
+ordered_models = metrics["model"].tolist()
+positions = list(range(len(ordered_models)))
 
-for i, (_, row) in enumerate(metrics.iterrows()):
-    values = [row[column] for column in metric_columns]
+auc_values = [
+    float(metrics.loc[metrics["model"] == model, "roc_auc"].iloc[0])
+    for model in ordered_models
+]
+ap_values = [
+    float(metrics.loc[metrics["model"] == model, "average_precision"].iloc[0])
+    for model in ordered_models
+]
+colors = [model_colors.get(model, MUTED) for model in ordered_models]
 
-    positions = [
-        position + (i - (len(metrics) - 1) / 2) * bar_width
-        for position in x_positions
-    ]
+auc_bars = ax_auc.bar(positions, auc_values, color=colors, width=0.62)
+ax_auc.set_title("ROC-AUC", fontweight="bold", fontsize=10)
+ax_auc.set_xticks(positions)
+ax_auc.set_xticklabels(
+    ["Logistic\nRegression", "Random\nForest"], fontsize=8
+)
+ax_auc.set_ylim(0, max(auc_values) * 1.22)
+ax_auc.set_ylabel("Score")
 
-    bars = ax.bar(
-        positions,
-        values,
-        bar_width,
-        label=row["model"],
-        color=PRIMARY if i == 0 else SECONDARY,
+for bar, value in zip(auc_bars, auc_values):
+    ax_auc.text(
+        bar.get_x() + bar.get_width() / 2,
+        bar.get_height() + max(auc_values) * 0.025,
+        f"{value:.3f}",
+        ha="center",
+        fontsize=8,
     )
 
-    for bar, value in zip(bars, values):
-        ax.text(
-            bar.get_x() + bar.get_width() / 2,
-            bar.get_height() + 0.008,
-            f"{value:.3f}",
-            ha="center",
-            fontsize=8,
-        )
-
-ax.set_xticks(x_positions)
-ax.set_xticklabels(metric_labels)
-ax.set_ylim(
-    0,
-    max(float(metrics["roc_auc"].max()), 0.1) * 1.25,
+ap_bars = ax_ap.bar(positions, ap_values, color=colors, width=0.62)
+ax_ap.set_title("Average precision", fontweight="bold", fontsize=10)
+ax_ap.set_xticks(positions)
+ax_ap.set_xticklabels(
+    ["Logistic\nRegression", "Random\nForest"], fontsize=8
 )
-ax.set_title("Held-Out Model Comparison", fontweight="bold")
-ax.legend(frameon=False, fontsize=8)
+ax_ap.set_ylim(
+    0, max(ap_values) * 1.55 if max(ap_values) > 0 else 0.1
+)
 
-ax.text(
-    0.02,
-    0.02,
+for bar, value in zip(ap_bars, ap_values):
+    ax_ap.text(
+        bar.get_x() + bar.get_width() / 2,
+        bar.get_height() + max(ap_values) * 0.04,
+        f"{value:.3f}",
+        ha="center",
+        fontsize=8,
+    )
+
+ax_auc.text(
+    0.5,
+    1.14,
+    "Held-Out Model Comparison",
+    transform=ax_auc.transAxes,
+    ha="center",
+    fontweight="bold",
+    fontsize=11,
+)
+
+ax_ap.text(
+    0.5,
+    -0.28,
     "Modest predictive performance",
-    transform=ax.transAxes,
+    transform=ax_ap.transAxes,
+    ha="center",
     fontsize=8,
     color=ACCENT,
 )
 
 # ---------------------------------------------------------------------
 # CHART 3: DESCRIPTIVE SHOPPING CLUSTERS
-# These are not validated customer personas.
+# Label positions are adjusted to reduce overlap.
 # ---------------------------------------------------------------------
 
 ax = axes[1, 0]
@@ -254,38 +260,50 @@ ax.scatter(
     linewidth=1.2,
 )
 
+label_offsets = {
+    0: (10, 10),
+    1: (10, 6),
+    2: (12, -35),
+    3: (12, 25),
+}
+
 for _, row in clusters.iterrows():
+    cluster_id = int(row["cluster"])
     ax.annotate(
-        f"Cluster {int(row['cluster'])}\n"
-        f"n={int(row['users']):,}",
+        f"Cluster {cluster_id} (n={int(row['users']):,})",
         (
             row["avg_order_value"],
             row["avg_premium_item_share"] * 100,
         ),
-        xytext=(6, 6),
+        xytext=label_offsets.get(cluster_id, (8, 8)),
         textcoords="offset points",
         fontsize=8,
+        bbox=dict(
+            boxstyle="round,pad=0.2",
+            fc="white",
+            ec="none",
+            alpha=0.8,
+        ),
     )
 
-ax.set_title(
-    "Descriptive Shopping Clusters",
-    fontweight="bold",
-)
+ax.set_title("Descriptive Shopping Clusters", fontweight="bold")
 ax.set_xlabel("Average order value (₹)")
 ax.set_ylabel("Premium-item share (%)")
 
+# Keep the disclaimer away from the low-AOV cluster labels.
 ax.text(
     0.02,
-    0.02,
+    0.98,
     "Synthetic clusters; not validated personas",
     transform=ax.transAxes,
-    fontsize=8,
+    fontsize=7,
     color=ACCENT,
+    ha="left",
+    va="top",
 )
 
 # ---------------------------------------------------------------------
 # CHART 4: ILLUSTRATIVE RICE COMPARISON
-# Scores are planning assumptions, not measured outcomes.
 # ---------------------------------------------------------------------
 
 ax = axes[1, 1]
@@ -306,12 +324,7 @@ bar_colors = [
     for option in options["option"]
 ]
 
-bars = ax.barh(
-    options["option"],
-    options["score"],
-    color=bar_colors,
-)
-
+bars = ax.barh(options["option"], options["score"], color=bar_colors)
 ax.set_title("Illustrative RICE Scores", fontweight="bold")
 ax.set_xlabel("Planning score (assumptions, not measured outcomes)")
 ax.set_xlim(0, options["score"].max() * 1.25)
@@ -328,8 +341,7 @@ for bar, value in zip(bars, options["score"]):
 ax.text(
     0.98,
     0.04,
-    "Proposed first test: personalized rail\n"
-    "Smaller, reversible experiment",
+    "Proposed first test: personalized rail\nSmaller, reversible experiment",
     transform=ax.transAxes,
     ha="right",
     va="bottom",
@@ -341,7 +353,7 @@ ax.text(
 # SAVE OUTPUT
 # ---------------------------------------------------------------------
 
-plt.tight_layout(rect=[0, 0, 1, 0.92])
+plt.tight_layout(rect=[0, 0.015, 1, 0.92])
 fig.savefig(OUTPUT_PATH, dpi=160, bbox_inches="tight")
 plt.close(fig)
 
