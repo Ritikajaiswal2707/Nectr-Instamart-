@@ -316,6 +316,7 @@ The model informs a targeting hypothesis; it does not replace product judgment o
 - [x] Targeting hypothesis quantified and limitations documented
 - [x] PRD updated to use first-time Nectr purchase as the primary outcome
 - [x] Experiment and guardrail framework specified
+- [x] Generate dashboard from the current held-out model scores
+- [ ] Review and finalize executive summary
 - [ ] Validate product assumptions against real data, if available
 - [ ] Confirm feasibility and calculate experiment sample size
-- [ ] Build or finalize dashboard and executive summary

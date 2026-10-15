@@ -14,6 +14,10 @@ How should Instamart introduce Nectr, its premium grocery proposition: through t
 
 
 
+\## What We Found
+
+
+
 We built a synthetic dataset of 6,000 users and 24,834 cleaned orders to explore first-time Nectr purchase prediction.
 
 
@@ -36,9 +40,31 @@ The analysis excluded users with prior Nectr purchases and used historical shopp
 
 
 
-Logistic Regression slightly outperformed Random Forest on the reported held-out metrics (ROC-AUC 0.617 versus 0.613). Predictive performance is modest, so the model should be treated as an exploratory baseline rather than a production-ready targeting system.
+Logistic Regression slightly outperformed Random Forest on overall held-out metrics (ROC-AUC 0.617 versus 0.613). However, Random Forest produced a higher purchase concentration in the highest-scored decile (6.90% versus the 2.97% test-set baseline). The dashboard uses Random Forest scores for ranking, while Logistic Regression remains the slightly stronger overall predictive baseline. Both models show modest predictive performance, and the top-decile result is a preliminary ranking signal—not evidence of causal lift or production readiness.
 
 
+
+\*\*Important:\*\* All data, users, orders, and outcomes are synthetic. These results do not represent actual Instamart or Nectr business performance.
+
+
+
+\## The Decision
+
+
+
+\*\*Test a personalized “Premium for You” rail before committing to a dedicated tab or standalone app.\*\*
+
+
+
+A rail is a smaller, more reversible product hypothesis that can be tested within the existing shopping experience. The recommendation is based on the value of learning before making a larger investment—not on proof that the rail will perform better.
+
+
+
+The initial RICE comparison favours a dedicated tab under its illustrative assumptions (716 versus 612 for the rail). We would still test the rail first because the relative effort and risk of the options should be validated with stakeholders, and a controlled experiment can establish whether targeted discovery generates incremental purchases.
+
+
+
+This is a sequencing decision, not a claim that the rail is the highest-scoring option or that the model has demonstrated causal impact. The next step is to validate feasibility and test the rail against the existing experience using a properly powered randomized experiment.
 
 \## The Decision
 
@@ -91,3 +117,4 @@ The initial RICE comparison favours a dedicated tab under its illustrative assum
 
 
 \*\*Use synthetic analysis to form a targeting hypothesis, then use a properly powered randomized experiment with real product data to establish whether targeted Nectr discovery drives incremental first-time purchases.\*\*
+
