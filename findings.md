@@ -40,8 +40,7 @@ Logistic Regression and Random Forest were evaluated on a held-out test set.
 
 Logistic Regression performs slightly better across the reported metrics and is the simpler model to interpret. However, both models show modest discrimination, and precision at the default 0.5 threshold is low.
 
-**Decision:** Carry Logistic Regression forward as an exploratory baseline. Do not position either model as production-ready or claim that it reliably identifies individual buyers.
-
+**Decision:**  Retain Logistic Regression as the preferred exploratory baseline because it performs slightly better on ROC-AUC and average precision and is easier to interpret. However, both models achieve the same top-decile conversion in this test split. Neither model is production-ready, and the results do not establish reliable targeting performance on real customers.
 ## 4. Top-decile targeting hypothesis
 
 The held-out test set contains 1,449 eligible users.
@@ -72,8 +71,7 @@ These clusters describe shopping patterns in the synthetic dataset. They should 
 
 ## 6. Product implications
 
-1. **Test targeted discovery before building a dedicated destination.** A personalized rail is a reasonable low-cost hypothesis to validate, not a proven winner.
-2. **Use first-time Nectr purchase as the primary outcome.** Add-to-cart and click-through rates can diagnose the funnel, but do not establish purchase conversion.
+1. **Test targeted discovery before building a dedicated destination.** A personalized rail is a reasonable first experiment because it is a smaller, more reversible product intervention than a dedicated premium destination. Although the dedicated tab has a higher illustrative RICE score, the rail is the proposed first test—not a proven winner. The choice should be validated against engineering feasibility and real product data.2. **Use first-time Nectr purchase as the primary outcome.** Add-to-cart and click-through rates can diagnose the funnel, but do not establish purchase conversion.
 3. **Evaluate incrementality with a control group.** Compare eligible users randomly assigned to treatment and control.
 4. **Monitor guardrails.** Track overall order conversion, cancellations, average order value, and user experience to detect potential harm to core shopping.
 5. **Avoid over-personalization claims.** The model is exploratory and the underlying data is synthetic.
