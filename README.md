@@ -2,6 +2,7 @@
 
 **Project type:** Product Management + Applied ML  
 **Status:** Product discovery, synthetic-data analysis, and experiment design
+**Case study deck:** [View on Google Drive](https://drive.google.com/file/d/1bKlufcEc3ZeRMluUFDswlmlq-Ftim-RZ/view?usp=sharing)
 
 ## Overview
 
